@@ -1,20 +1,49 @@
-import React from 'react'
+import React, { Component } from 'react'
 import './TaskFilter.css'
 
-const TaskFilter = () => {
-  return (
-    <ul className="filters">
-      <li>
-        <button className="selected">All</button>
-      </li>
-      <li>
-        <button>Active</button>
-      </li>
-      <li>
-        <button>Completed</button>
-      </li>
-    </ul>
-  )
-}
+export default class TaskFilter extends Component {
+  state = {
+    All: true,
+    Active: false,
+    Completed: false,
+  }
 
-export default TaskFilter
+  setFilter = (evt) => {
+    const {textContent} = evt.target
+    this.props.taskFilter(textContent)
+    try {
+      this.setState((state) => {
+        const newState = { ...state }
+        for (let el in newState) {
+          newState[el] = false
+        }
+        newState[textContent] = true
+        return newState
+      })
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  highlightElement = (element) => {
+    if (this.state[element]) return 'selected'
+  }
+
+  render() {
+    return (
+      <ul className="filters" onClick={this.setFilter}>
+        <li>
+          <button className={this.highlightElement('All')}>All</button>
+        </li>
+        <li>
+          <button className={this.highlightElement('Active')}>Active</button>
+        </li>
+        <li>
+          <button className={this.highlightElement('Completed')}>
+            Completed
+          </button>
+        </li>
+      </ul>
+    )
+  }
+}
