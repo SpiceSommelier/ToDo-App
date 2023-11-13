@@ -45,17 +45,23 @@ export default class Task extends Component {
     this.setState(({ editing }) => {
       return {
         editing: !editing,
+        newTaskText: this.props.label,
       }
     })
   }
 
+  spaceCheck = (s) => {
+    if (s.trim() != '') return true
+    return false
+  }
+
   editTask = (evt) => {
     evt.preventDefault()
-    const { onEdit } = this.props
+    const { onEdit, label } = this.props
     const { newTaskText } = this.state
-    onEdit(newTaskText)
+    if (this.spaceCheck(newTaskText)) onEdit(newTaskText)
     this.setState({
-      newTaskText: '',
+      newTaskText: label,
       editing: false,
     })
   }
