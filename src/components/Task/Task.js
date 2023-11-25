@@ -39,9 +39,44 @@ export default class Task extends Component {
   state = {
     editing: false,
     newTaskText: '',
+    isTimerActive: false,
+    timer: this.props.timer,
+    timerLink: null,
+  }
+
+  stopTimer = () => {
+    const { timerLink } = this.state
+    if (timerLink) {
+      clearInterval(timerLink)
+    }
+  }
+
+  componentDidUpdate = () => {
+    const { timerLink, timer } = this.state
+    if (timer.sec <= 0 && timer.min <= 0) clearInterval(timerLink)
+  }
+
+  startTimer = () => {
+    const timerInterval = setInterval(() => {
+      this.setState(({ timer }) => {
+        const newTimer = { ...timer }
+        if (newTimer.sec === 0) {
+          newTimer.min = newTimer.min - 1
+          newTimer.sec = 60
+        }
+        newTimer.sec = newTimer.sec - 1
+        return {
+          timer: newTimer,
+        }
+      })
+    }, 1000)
+    this.setState({
+      timerLink: timerInterval,
+    })
   }
 
   onEditClick = () => {
+    clearInterval(this.state.timerLink)
     this.setState(({ editing }) => {
       return {
         editing: !editing,
@@ -51,7 +86,7 @@ export default class Task extends Component {
   }
 
   spaceCheck = (s) => {
-    if (s.trim() != '') return true
+    if (s.trim() !== '') return true
     return false
   }
 
@@ -77,7 +112,7 @@ export default class Task extends Component {
 
   render() {
     const { label, time, active, onDeleted, onToggleDone } = this.props
-    const { editing, newTaskText } = this.state
+    const { editing, timer, newTaskText } = this.state
     let className = ''
     if (!active) className += ' completed'
     if (editing) className += ' editing'
@@ -85,18 +120,23 @@ export default class Task extends Component {
     return (
       <li className={className}>
         <div className="view">
-          <input className="toggle" type="checkbox" onChange={onToggleDone} checked={!active}></input>
+          <input className="toggle" type="checkbox" onChange={onToggleDone} checked={!active} />
           <label>
-            <span className="description" onClick={onToggleDone}>
+            <span className="title" onClick={onToggleDone}>
               {label}
             </span>
-            <span className="created">{formatDistanceToNow(new Date(time))}</span>
+            <span className="description">
+              <button className="icon icon-play" onClick={this.startTimer} />
+              <button className="icon icon-pause" onClick={this.stopTimer} />
+              {timer.min}:{timer.sec}
+            </span>
+            <span className="description">{formatDistanceToNow(new Date(time)) + ' ago'}</span>
           </label>
-          <button className="icon icon-edit" onClick={this.onEditClick}></button>
-          <button className="icon icon-destroy" onClick={onDeleted}></button>
+          <button className="icon icon-edit" onClick={this.onEditClick} />
+          <button className="icon icon-destroy" onClick={onDeleted} />
         </div>
         <form onSubmit={this.editTask}>
-          <input className="edit" type="text" onChange={this.editTaskText} value={newTaskText}></input>
+          <input className="edit" type="text" onChange={this.editTaskText} value={newTaskText} />
         </form>
       </li>
     )

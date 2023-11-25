@@ -3,11 +3,11 @@ import './Header.css'
 
 import NewTaskForm from '../NewTaskForm'
 
-const Header = (props) => {
+const Header = ({onTaskAdd}) => {
   return (
     <header className="header">
       <h1>todos</h1>
-      <NewTaskForm onTaskAdded={props.onAddedTask} />
+      <NewTaskForm onTaskAdd={onTaskAdd} />
     </header>
   )
 }

@@ -13,12 +13,16 @@ export default class App extends Component {
     filteredArray: [],
   }
 
-  createToDoItem(label, active = true) {
+  createToDoItem(label, active = true, min = 5, sec = 0) {
     return {
       label,
+      timer: {
+        min,
+        sec,
+      },
       time: new Date(),
       active,
-      id: new Date().getTime(),
+      id: `${new Date().getTime()}`,
     }
   }
 
@@ -50,8 +54,8 @@ export default class App extends Component {
     })
   }
 
-  addItem = (value) => {
-    const newItem = this.createToDoItem(value)
+  addItem = (value, min, sec) => {
+    const newItem = this.createToDoItem(value, true, min, sec)
 
     this.setState(({ dataArray }) => {
       const newArr = [...dataArray, newItem]
@@ -122,7 +126,7 @@ export default class App extends Component {
 
     return (
       <section className="todoapp">
-        <Header onAddedTask={this.addItem} />
+        <Header onTaskAdd={this.addItem} />
         <section className="main">
           <TaskList
             dataArray={filteredArray}
