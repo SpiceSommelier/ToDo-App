@@ -1,40 +1,89 @@
-import React, { Component } from 'react'
+import React, { useState } from 'react'
 import './NewTaskForm.css'
 
-export default class NewTaskForm extends Component {
-  state = {
-    label: '',
-  }
-  onLabelChange = (evt) => {
-    this.setState({
-      label: evt.target.value,
-    })
-  }
-  formSubmit = (evt) => {
-    const { label } = this.state
-    const { onTaskAdded } = this.props
-    evt.preventDefault()
-    if (label) {
-      onTaskAdded(label)
+const NewTaskForm = ({ onTaskAdd }) => {
+  const [label, setLabel] = useState('')
+  const [min, setMin] = useState('')
+  const [sec, setSec] = useState('')
+
+  const inputChange = (evt, name) => {
+    const { value } = evt.target
+    if (name === 'min' || name === 'sec') {
+      const parsedValue = parseInt(value)
+      if (!isNaN(parsedValue)) {
+        if (parsedValue >= 0) {
+          switch (name) {
+            case 'min':
+              setMin(parsedValue)
+              break
+            case 'sec':
+              setSec(parsedValue)
+              break
+            default:
+          }
+        }
+      }
+    } else {
+      if (value[0] !== ' ') {
+        setLabel(value)
+      }
     }
-    this.setState({
-      label: '',
-    })
   }
-  clearInput = (evt) => {
-    evt.target.value = ''
+
+  const onFormSubmit = () => {
+    if (label && (min || min === 0) && sec) {
+      let timer = sec + (min * 60)      
+      onTaskAdd(label, timer)
+      setLabel('')
+      setSec('')
+      setMin('')
+    }
   }
-  render() {
-    return (
-      <form onSubmit={this.formSubmit}>
-        <input
-          className="new-todo"
-          placeholder="What needs to be done?"
-          autoFocus
-          onChange={this.onLabelChange}
-          value={this.state.label}
-        ></input>
-      </form>
-    )
+
+  const formSubmit = (evt) => {
+    if (evt.key === 'Enter') {
+      onFormSubmit()
+    }
   }
+
+  return (
+    <form onSubmit={formSubmit} className="new-todo-form" noValidate={true}>
+      <input
+        className="new-todo"
+        placeholder="What needs to be done?"
+        autoFocus
+        onChange={(evt) => {
+          inputChange(evt, 'label')
+        }}
+        value={label}
+        type="text"
+        onKeyDown={formSubmit}
+        id="label"
+      />
+      <input
+        className="new-todo-form__timer"
+        placeholder="Min"
+        value={min}
+        onChange={(evt) => {
+          inputChange(evt, 'min')
+        }}
+        type="text"
+        onKeyDown={formSubmit}
+        id="min"
+      />
+      <input
+        className="new-todo-form__timer"
+        placeholder="Sec"
+        value={sec}
+        onChange={(evt) => {
+          inputChange(evt, 'sec')
+        }}
+        type="text"
+        onKeyDown={formSubmit}
+        id="sec"
+      />
+    </form>
+  )
 }
+
+export default NewTaskForm

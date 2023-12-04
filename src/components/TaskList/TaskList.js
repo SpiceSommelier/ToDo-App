@@ -3,7 +3,7 @@ import './TaskList.css'
 
 import Task from '../Task'
 
-const TaskList = ({ dataArray, onDeleted, onToggleDone, onEdit }) => {
+const TaskList = ({ dataArray, onDeleted, onToggleDone, onEdit, onTimerChange }) => {
   const elements = dataArray.map((item) => {
     const { id, ...props } = item
     return (
@@ -13,6 +13,7 @@ const TaskList = ({ dataArray, onDeleted, onToggleDone, onEdit }) => {
         onDeleted={() => onDeleted(id)}
         onToggleDone={() => onToggleDone(id)}
         onEdit={(newText) => onEdit(id, newText)}
+        changeTimer={(action) => onTimerChange(id, action)}
       />
     )
   })

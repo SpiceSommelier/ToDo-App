@@ -1,139 +1,162 @@
-import React, { Component } from 'react'
+import React, { useState, useEffect } from 'react'
 import './App.css'
 
 import Header from '../Header'
 import TaskList from '../TaskList'
 import Footer from '../Footer'
 
-export default class App extends Component {
-  localStorageKey = 'Tasks'
-
-  state = JSON.parse(localStorage.getItem(this.localStorageKey)) || {
-    dataArray: [],
-    filteredArray: [],
+const App = () => {
+  const localStorageKey = 'Tasks'
+  let initialDataArray = []
+  let initialFilteredArray = []
+  if (localStorage.getItem(localStorageKey)) {
+    initialDataArray = JSON.parse(localStorage.getItem(localStorageKey)).dataArray
+    initialFilteredArray = JSON.parse(localStorage.getItem(localStorageKey)).filteredArray
   }
+  const [dataArray, setDataArray] = useState(initialDataArray)
+  const [filteredArray, setFilteredArray] = useState(initialFilteredArray)
 
-  createToDoItem(label, active = true) {
+  const createToDoItem = (label, active = true, timer = 300) => {
     return {
       label,
+      timer,
       time: new Date(),
       active,
-      id: new Date().getTime(),
+      id: `${new Date().getTime()}`,
+      isStartTimer: false,
     }
   }
 
-  onToggleDone = (id) => {
-    this.setState(({ dataArray }) => {
-      const idx = this.findIndex(id)
-      const newArr = [...dataArray]
-      newArr[idx].active = !newArr[idx].active
-      return {
-        dataArray: newArr,
-        filteredArray: newArr,
-      }
-    })
-  }
-
-  findIndex = (id) => {
-    return this.state.dataArray.findIndex((el) => el.id === id)
-  }
-
-  deleteItem = (id) => {
-    this.setState(({ dataArray }) => {
-      const idx = this.findIndex(id)
-      const newArr = [...dataArray.slice(0, idx), ...dataArray.slice(idx + 1)]
-      localStorage.setItem(this.localStorageKey, JSON.stringify(newArr))
-      return {
-        dataArray: newArr,
-        filteredArray: newArr,
-      }
-    })
-  }
-
-  addItem = (value) => {
-    const newItem = this.createToDoItem(value)
-
-    this.setState(({ dataArray }) => {
-      const newArr = [...dataArray, newItem]
-      localStorage.setItem(this.localStorageKey, JSON.stringify(newArr))
-      return {
-        dataArray: newArr,
-        filteredArray: newArr,
-      }
-    })
-  }
-
-  taskFilter = (filterName = 'All') => {
-    if (filterName === 'All') {
-      this.setState(({ dataArray }) => {
-        return {
-          filteredArray: [...dataArray],
-        }
+  useEffect(() => {
+    localStorage.setItem('starttimer', Date.now())
+    const endTime = Number(localStorage.getItem('endtimer'))
+    const StartTime = Number(localStorage.getItem('starttimer'))
+    const delay = (StartTime - endTime) / 1000
+    const timeout = setTimeout(() => {
+      setFilteredArray((prev) => {
+        return prev.map((element) => {
+          if (element.timer <= 0) {
+            element.active = false
+            element.isStartTimer = false
+            element.timer = 0
+          }
+          if (element.isStartTimer) {
+            element.timer -= delay
+          }
+          return { ...element }
+        })
       })
-    }
-    if (filterName === 'Active') {
-      this.setState(({ dataArray }) => {
-        const newArr = dataArray.filter((el) => el.active)
-        return {
-          filteredArray: newArr,
-        }
+      setDataArray((prev) => {
+        return prev.map((element) => {
+          if (element.timer <= 0) {
+            element.active = false
+            element.isStartTimer = false
+            element.timer = 0
+          }
+          if (element.isStartTimer) {
+            element.timer -= delay
+          }
+          return { ...element }
+        })
       })
+    }, 1000)
+
+    localStorage.setItem('endtimer', Date.now())
+    return () => {
+      clearTimeout(timeout)
     }
-    if (filterName === 'Completed') {
-      this.setState(({ dataArray }) => {
-        const newArr = dataArray.filter((el) => !el.active)
-        return {
-          filteredArray: newArr,
-        }
-      })
+  }, [dataArray, filteredArray])
+
+  const onTimerChange = (id, action) => {
+    const idx = findIndex(id)
+    const newArr = [...dataArray]
+    newArr[idx].isStartTimer = action
+    setDataArray(newArr)
+    setFilteredArray(newArr)
+  }
+
+  const onToggleDone = (id) => {
+    const idx = findIndex(id)
+    const newArr = [...dataArray]
+    newArr[idx].active = !newArr[idx].active
+    setDataArray(newArr)
+    setFilteredArray(newArr)
+  }
+
+  const findIndex = (id) => {
+    return dataArray.findIndex((el) => el.id === id)
+  }
+
+  const deleteItem = (id) => {
+    const idx = findIndex(id)
+    const newArr = [...dataArray.slice(0, idx), ...dataArray.slice(idx + 1)]
+    localStorage.setItem(localStorageKey, JSON.stringify(newArr))
+    setDataArray(newArr)
+    setFilteredArray(newArr)
+  }
+
+  const addItem = (value, min, sec) => {
+    const newItem = createToDoItem(value, true, min, sec)
+    const newArr = [...dataArray, newItem]
+    localStorage.setItem(localStorageKey, JSON.stringify(newArr))
+    setDataArray(newArr)
+    setFilteredArray(newArr)
+  }
+
+  const taskFilter = (filterName = 'All') => {
+    let newArr = [...dataArray]
+    switch (filterName) {
+      case 'Active':
+        newArr = dataArray.filter((el) => el.active)
+        setFilteredArray(newArr)
+        break
+      case 'Completed':
+        newArr = dataArray.filter((el) => !el.active)
+        setFilteredArray(newArr)
+        break
+      default:
+        setFilteredArray(newArr)
+        break
     }
   }
 
-  removeDone = () => {
-    this.setState(({ dataArray }) => {
-      const newArr = dataArray.filter((el) => el.active)
-      return {
-        dataArray: newArr,
-        filteredArray: newArr,
-      }
-    })
+  const removeDone = () => {
+    const newArr = dataArray.filter((el) => el.active)
+    setDataArray(newArr)
+    setFilteredArray(newArr)
   }
 
-  editItem = (id, newText) => {
-    const { dataArray } = this.state
+  const editItem = (id, newText) => {
     const newArr = []
     for (let i = 0; i < dataArray.length; i++) {
       const el = dataArray[i]
       if (el.id === id) el.label = newText
       newArr.push(el)
     }
-    this.setState({
-      dataArray: newArr,
-      filteredArray: newArr,
-    })
+    setDataArray(newArr)
+    setFilteredArray(newArr)
   }
 
-  render() {
-    let { filteredArray, dataArray } = this.state
+  const activeCount = dataArray.filter((el) => el.active).length
 
-    const activeCount = dataArray.filter((el) => el.active).length
+  localStorage.setItem(localStorageKey, JSON.stringify({ filteredArray, dataArray }))
 
-    localStorage.setItem(this.localStorageKey, JSON.stringify(this.state))
-
-    return (
-      <section className="todoapp">
-        <Header onAddedTask={this.addItem} />
-        <section className="main">
-          <TaskList
-            dataArray={filteredArray}
-            onDeleted={this.deleteItem}
-            onToggleDone={this.onToggleDone}
-            taskFilter={this.taskFilter}
-            onEdit={this.editItem}
-          />
-          <Footer activeCount={activeCount} taskFilter={this.taskFilter} removeDone={this.removeDone} />
-        </section>
+  return (
+    <section className="todoapp">
+      <Header onTaskAdd={addItem} />
+      <section className="main">
+        <TaskList
+          dataArray={filteredArray}
+          onDeleted={deleteItem}
+          onToggleDone={onToggleDone}
+          taskFilter={taskFilter}
+          onEdit={editItem}
+          onTimerChange={onTimerChange}
+        />
+        <Footer activeCount={activeCount} taskFilter={taskFilter} removeDone={removeDone} />
       </section>
-    )
-  }
+    </section>
+  )
 }
+
+export default App
